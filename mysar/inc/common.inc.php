@@ -18,7 +18,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Apparently, lots of people complain about lots of warnings. Apparently, those warnings are PHP's complains about bad code. So, either correct the code OR silence PHP. Guess what this does...
-error_reporting(E_ALL ^ E_NOTICE);
+error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 
 // Read the main configuration file
 if(file_exists($basePath.'/etc/config.ini')) {
@@ -46,10 +46,12 @@ if($DEBUG_MODE=='cmd') {
 // Initialize the database connection
 debug('Initializing database connection...',40,__FILE__,__LINE__);
 debug('dbHost='.$iniConfig['dbHost'].',dbUser='.$iniConfig['dbUser'].',dbPass='.$iniConfig['dbPass'],40,__FILE__,__LINE__);
-$link=mysqli_connect($iniConfig['dbHost'],$iniConfig['dbUser'],$iniConfig['dbPass']);
+$link=mysqli_connect($iniConfig['dbHost'],$iniConfig['dbUser'],$iniConfig['dbPass'],FALSE,2);
 if (!$link) {
-    die('Erreur de connexion (' . mysqli_connect_errno() . ') '
-            . mysqli_connect_error());
+	debug('Error connecting to database!',20,__FILE__,__LINE__);
+	db_error();
+	debug('FATAL. Exiting...',20,__FILE__,__LINE__);
+	die(1);
 }
 debug('Done.',40,__FILE__,__LINE__);
 debug('Selecting database...',40,__FILE__,__LINE__);
@@ -57,7 +59,7 @@ debug('dbName='.$iniConfig['dbName'],40,__FILE__,__LINE__);
 $result=mysqli_select_db($link, $iniConfig['dbName']);
 if(!$result) {
 	debug('Could not select database!',40,__FILE__,__LINE__);
-	db_error($link);
+	db_error();
 	debug('FATAL. Exiting...',20,__FILE__,__LINE__);
 	die(1);
 }
@@ -66,13 +68,13 @@ debug('Done.',40,__FILE__,__LINE__);
 // Identification
 define('PROGRAM_NAME_SHORT','mysar');
 define('PROGRAM_NAME_LONG','MySQL Squid Access Report');
-define('PROGRAM_VERSION','');
+define('PROGRAM_VERSION','2.1.4');
 
 if($DEBUG_MODE=='web') {
 // Initialize smarty template engine
 	require($basePath.'/inc/smarty/Smarty.class.php');
 	$smarty=new Smarty;
-	$smarty->template_dir=$basePath.'/www-templates.fr_FR';
+	$smarty->template_dir=$basePath.'/www-templates';
 	$smarty->compile_dir=$basePath.'/smarty-tmp';
 	$smarty->debugging = false;
 }

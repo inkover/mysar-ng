@@ -39,14 +39,14 @@ $smarty->register_modifier('bytesToHRF','bytesToHRF');
 $smarty->assign('pageVars',$pageVars);
 
 // get last accessed record
-$pageVars['lastTimestamp']=getConfigValue($link, 'lastTimestamp');
+$pageVars['lastTimestamp']=getConfigValue('lastTimestamp');
 $pageVars['lastTimestampFormatted']=date('d-m-Y H:i:s',$pageVars['lastTimestamp']);
 
 // get last clean-up
-$pageVars['lastCleanUp']=date_Ymd2dmY_seperator(getConfigValue($link, 'lastCleanUp'),'-');
+$pageVars['lastCleanUp']=date_Ymd2dmY_seperator(getConfigValue('lastCleanUp'),'-');
 
 // get last imported records number
-$pageVars['lastImportedRecordsNumber']=getConfigValue($link, 'lastImportedRecordsNumber');
+$pageVars['lastImportedRecordsNumber']=getConfigValue('lastImportedRecordsNumber');
 
 $pageVars['currentDateTime']=date('d-m-Y H:i:s');
 
@@ -74,19 +74,19 @@ $pageVars['nextDate']=date('Y-m-d',mktime(0,0,0,$pageVars['month'],$pageVars['da
 $pageVars['previousWeek']=date('Y-m-d',mktime(0,0,0,$pageVars['month'],$pageVars['day']-7,$pageVars['year']));
 $pageVars['nextWeek']=date('Y-m-d',mktime(0,0,0,$pageVars['month'],$pageVars['day']+7,$pageVars['year']));
 if(isset($_REQUEST['hostiplong']) && $_REQUEST['hostiplong']) {
-	$pageVars['host']=getHostFromIP($link, $_REQUEST['hostiplong'],$pageVars['date']);
+	$pageVars['host']=getHostFromIP($_REQUEST['hostiplong'],$pageVars['date']);
 	$pageVars['hostiplong']=$_REQUEST['hostiplong'];
 }
 
 if(isset($_REQUEST['sitesID']) && $_REQUEST['sitesID']) {
 	$pageVars['sitesID']=$_REQUEST['sitesID'];
-	$pageVars['site']=getSiteFromSiteID($link, $pageVars['sitesID'],$pageVars['date']);
+	$pageVars['site']=getSiteFromSiteID($pageVars['sitesID'],$pageVars['date']);
 }
 
-$pageVars['activeUsers']=getActiveUsers($link);
+$pageVars['activeUsers']=getActiveUsers();
 
 if (isset($_REQUEST['usersID'])) {
-	$pageVars['user']=getUserFromUsersID($link, $_REQUEST['usersID'],$pageVars['date']);
+	$pageVars['user']=getUserFromUsersID($_REQUEST['usersID'],$pageVars['date']);
 	$pageVars['usersID']=$_REQUEST['usersID'];
 }
 
@@ -117,19 +117,19 @@ switch($a_switch) {
 
 		// determing the sort method, or get the defaults
 		if(empty($_REQUEST['OrderBy'])) {
-			$pageVars['OrderBy']=getConfigValue($link, 'defaultIPSummaryOrderBy');
+			$pageVars['OrderBy']=getConfigValue('defaultIPSummaryOrderBy');
 		} else {
 			$pageVars['OrderBy']=$_REQUEST['OrderBy'];
 		}
 		if(empty($_REQUEST['OrderMethod'])) {
-			$pageVars['OrderMethod']=getConfigValue($link, 'defaultIPSummaryOrderMethod');
+			$pageVars['OrderMethod']=getConfigValue('defaultIPSummaryOrderMethod');
 		} else {
 			$pageVars['OrderMethod']=$_REQUEST['OrderMethod'];
 		}
 		
 		// get byte unit used
 		if(empty($_REQUEST['ByteUnit'])) {
-			$pageVars['ByteUnit']=getConfigValue($link, 'defaultIPSummaryByteUnit');
+			$pageVars['ByteUnit']=getConfigValue('defaultIPSummaryByteUnit');
 		} else {
 			$pageVars['ByteUnit']=$_REQUEST['ByteUnit'];
 		}
@@ -176,7 +176,7 @@ switch($a_switch) {
 		$query.="trafficSummaries.date='".$pageVars['date']."'";
 		$query.=' GROUP BY trafficSummaries.ip,trafficSummaries.usersID';
 		$query.=' ORDER BY '.$pageVars['OrderBy'].' '.$pageVars['OrderMethod'];
-		$pageVars['summaryIPRecords']=db_select_all($link, $query);
+		$pageVars['summaryIPRecords']=db_select_all($query);
 		
 		$query='SELECT ';
 		$query.='COUNT(DISTINCTROW(ip)) AS ips';
@@ -217,8 +217,8 @@ switch($a_switch) {
 		$query.=' WHERE ';
 		$query.="traffic.date='".$pageVars['date']."'";
 		$query.=' ORDER BY traffic.time DESC ';
-		$query.=' LIMIT 10';
-		$pageVars['latestUserActivity']=db_select_all($link, $query);
+		$query.=' LIMIT 50';
+		$pageVars['latestUserActivity']=db_select_all($query);
 				
 		$template='IPSummary';
 		break;
@@ -231,8 +231,8 @@ switch($a_switch) {
 			$query.="description='".$_REQUEST['thisValue']."'";
 			$query.=' WHERE ';
 			$query.="ip='".$_REQUEST['hostiplong']."'";
-			db_update($link, $query);
-			$pageVars['host']=getHostFromIP($link, $_REQUEST['hostiplong'],$pageVars['date']);
+			db_update($query);
+			$pageVars['host']=getHostFromIP($_REQUEST['hostiplong'],$pageVars['date']);
 		}
 
 
@@ -243,7 +243,7 @@ switch($a_switch) {
 			'users'.
 			' WHERE '.
 			'id=\''.$_REQUEST['usersID'].'\'';
-		$currentAuthuser=db_select_one_row($link, $query);
+		$currentAuthuser=db_select_one_row($query);
 		
 		$query='SELECT '.
 			'DISTINCTROW '.
@@ -262,7 +262,7 @@ switch($a_switch) {
 			'users.date=\''.$pageVars['previousDate'].'\''.
 			' AND '.
 			'trafficSummaries.ip=\''.$pageVars['hostiplong'].'\'';
-		$result=db_select_one_row($link, $query);
+		$result=db_select_one_row($query);
 		$pageVars['previousDateID']=$result['id'];
 
 		$query='SELECT '.
@@ -282,7 +282,7 @@ switch($a_switch) {
 			'users.date=\''.$pageVars['previousWeek'].'\''.
 			' AND '.
 			'trafficSummaries.ip=\''.$pageVars['hostiplong'].'\'';
-		$result=db_select_one_row($link, $query);
+		$result=db_select_one_row($query);
 		$pageVars['previousWeekID']=$result['id'];
 		echo $pageVars['previousWeekID'];
 
@@ -303,7 +303,7 @@ switch($a_switch) {
 			'users.date=\''.$pageVars['nextDate'].'\''.
 			' AND '.
 			'trafficSummaries.ip=\''.$pageVars['hostiplong'].'\'';
-		$result=db_select_one_row($link, $query);
+		$result=db_select_one_row($query);
 		$pageVars['nextDateID']=$result['id'];
 
 		$query='SELECT '.
@@ -323,7 +323,7 @@ switch($a_switch) {
 			'users.date=\''.$pageVars['nextWeek'].'\''.
 			' AND '.
 			'trafficSummaries.ip=\''.$pageVars['hostiplong'].'\'';
-		$result=db_select_one_row($link, $query);
+		$result=db_select_one_row($query);
 		$pageVars['nextWeekID']=$result['id'];
 
 
@@ -340,19 +340,19 @@ switch($a_switch) {
 
 		// determing the sort method, or get the defaults
 		if(empty($_REQUEST['OrderBy'])) {
-			$pageVars['OrderBy']=getConfigValue($link, 'defaultIPSitesSummaryOrderBy');
+			$pageVars['OrderBy']=getConfigValue('defaultIPSitesSummaryOrderBy');
 		} else {
 			$pageVars['OrderBy']=$_REQUEST['OrderBy'];
 		}
 		if(empty($_REQUEST['OrderMethod'])) {
-			$pageVars['OrderMethod']=getConfigValue($link, 'defaultIPSitesSummaryOrderMethod');
+			$pageVars['OrderMethod']=getConfigValue('defaultIPSitesSummaryOrderMethod');
 		} else {
 			$pageVars['OrderMethod']=$_REQUEST['OrderMethod'];
 		}
 		
 		// get byte unit used
 		if(empty($_REQUEST['ByteUnit'])) {
-			$pageVars['ByteUnit']=getConfigValue($link, 'defaultIPSitesSummaryByteUnit');
+			$pageVars['ByteUnit']=getConfigValue('defaultIPSitesSummaryByteUnit');
 		} else {
 			$pageVars['ByteUnit']=$_REQUEST['ByteUnit'];
 		}
@@ -391,10 +391,10 @@ switch($a_switch) {
 		}
 		$query.=" GROUP BY trafficSummaries.sitesID";
 		$query.=' ORDER BY '.$pageVars['OrderBy'].' '.$pageVars['OrderMethod'];
-		$pageVars['summaryIPSites']=db_select_all($link, $query);
+		$pageVars['summaryIPSites']=db_select_all($query);
 		
 		$query='SELECT ';
-		$query.='INET6_NTOA(UNHEX(traffic.ip)) AS hostip';
+		$query.='INET_NTOA(traffic.ip) AS hostip';
 		$query.=',';
 		$query.='traffic.ip AS hostiplong';
 		$query.=',';
@@ -419,8 +419,8 @@ switch($a_switch) {
 		$query.=' AND ';
 		$query.="traffic.ip='".$pageVars['hostiplong']."'";
 		$query.=' ORDER BY traffic.time DESC ';
-		$query.=' LIMIT 10';
-		$pageVars['latestUserActivity']=db_select_all($link, $query);
+		$query.=' LIMIT 50';
+		$pageVars['latestUserActivity']=db_select_all($query);
 		
 		$template='IPSitesSummary';
 		break;
@@ -440,18 +440,18 @@ switch($a_switch) {
 		
 		// determing the sort method, or get the defaults
 		if(empty($_REQUEST['OrderBy'])) {
-			$pageVars['OrderBy']=getConfigValue($link, 'defaultDateTimeOrderBy');
+			$pageVars['OrderBy']=getConfigValue('defaultDateTimeOrderBy');
 		} else {
 			$pageVars['OrderBy']=$_REQUEST['OrderBy'];
 		}
 		if(empty($_REQUEST['OrderMethod'])) {
-			$pageVars['OrderMethod']=getConfigValue($link, 'defaultDateTimeOrderMethod');
+			$pageVars['OrderMethod']=getConfigValue('defaultDateTimeOrderMethod');
 		} else {
 			$pageVars['OrderMethod']=$_REQUEST['OrderMethod'];
 		}
 		// get byte unit used
 		if(empty($_REQUEST['ByteUnit'])) {
-			$pageVars['ByteUnit']=getConfigValue($link, 'defaultDateTimeByteUnit');
+			$pageVars['ByteUnit']=getConfigValue('defaultDateTimeByteUnit');
 		} else {
 			$pageVars['ByteUnit']=$_REQUEST['ByteUnit'];
 		}
@@ -482,7 +482,7 @@ switch($a_switch) {
 		$query.=" AND ";
 		$query.="ip='".$pageVars['hostiplong']."'";
 		$query.=' ORDER BY '.$pageVars['OrderBy'].' '.$pageVars['OrderMethod'];
-		$pageVars['siteDetails']=db_select_all($link, $query);
+		$pageVars['siteDetails']=db_select_all($query);
 
 		$template='details';
 		break;
@@ -503,19 +503,19 @@ switch($a_switch) {
 
 		// determing the sort method, or get the defaults
 		if(empty($_REQUEST['OrderBy'])) {
-			$pageVars['OrderBy']=getConfigValue($link, 'defaultAllSitesOrderBy');
+			$pageVars['OrderBy']=getConfigValue('defaultAllSitesOrderBy');
 		} else {
 			$pageVars['OrderBy']=$_REQUEST['OrderBy'];
 		}
 		if(empty($_REQUEST['OrderMethod'])) {
-			$pageVars['OrderMethod']=getConfigValue($link, 'defaultAllSitesOrderMethod');
+			$pageVars['OrderMethod']=getConfigValue('defaultAllSitesOrderMethod');
 		} else {
 			$pageVars['OrderMethod']=$_REQUEST['OrderMethod'];
 		}
 		
 		// get byte unit used
 		if(empty($_REQUEST['ByteUnit'])) {
-			$pageVars['ByteUnit']=getConfigValue($link, 'defaultAllSitesByteUnit');
+			$pageVars['ByteUnit']=getConfigValue('defaultAllSitesByteUnit');
 		} else {
 			$pageVars['ByteUnit']=$_REQUEST['ByteUnit'];
 		}
@@ -553,7 +553,7 @@ switch($a_switch) {
 		$query.="trafficSummaries.date='".$pageVars['date']."'";
 		$query.=' GROUP BY trafficSummaries.sitesID';
 		$query.=' ORDER BY '.$pageVars['OrderBy'].' '.$pageVars['OrderMethod'];
-		$pageVars['allSites']=db_select_all($link, $query);	
+		$pageVars['allSites']=db_select_all($query);	
 		
 		$template='allsites';
 		break;
@@ -573,19 +573,19 @@ switch($a_switch) {
 
 		// determing the sort method, or get the defaults
 		if(empty($_REQUEST['OrderBy'])) {
-			$pageVars['OrderBy']=getConfigValue($link, 'defaultSiteUsersOrderBy');
+			$pageVars['OrderBy']=getConfigValue('defaultSiteUsersOrderBy');
 		} else {
 			$pageVars['OrderBy']=$_REQUEST['OrderBy'];
 		}
 		if(empty($_REQUEST['OrderMethod'])) {
-			$pageVars['OrderMethod']=getConfigValue($link, 'defaultSiteUsersOrderMethod');
+			$pageVars['OrderMethod']=getConfigValue('defaultSiteUsersOrderMethod');
 		} else {
 			$pageVars['OrderMethod']=$_REQUEST['OrderMethod'];
 		}
 		
 		// get byte unit used
 		if(empty($_REQUEST['ByteUnit'])) {
-			$pageVars['ByteUnit']=getConfigValue($link, 'defaultSiteUsersByteUnit');
+			$pageVars['ByteUnit']=getConfigValue('defaultSiteUsersByteUnit');
 		} else {
 			$pageVars['ByteUnit']=$_REQUEST['ByteUnit'];
 		}
@@ -636,7 +636,7 @@ switch($a_switch) {
 		$query.="trafficSummaries.sitesID='".$pageVars['sitesID']."'";
 		$query.=' GROUP BY trafficSummaries.ip,trafficSummaries.usersID';
 		$query.=' ORDER BY '.$pageVars['OrderBy'].' '.$pageVars['OrderMethod'];
-		$pageVars['siteusers']=db_select_all($link, $query);
+		$pageVars['siteusers']=db_select_all($query);
 		
 		$query='SELECT ';
 		$query.='COUNT(DISTINCTROW(usersID)) AS users';
@@ -670,7 +670,7 @@ switch($a_switch) {
 		$query.=' AND ';
 		$query.="traffic.sitesID='".$pageVars['sitesID']."'";
 		$query.=' ORDER BY traffic.time DESC ';
-		$query.=' LIMIT 10';
+		$query.=' LIMIT 50';
 		$pageVars['latestSiteActivity']=db_select_all($query);
 		
 		$template='siteusers';
@@ -681,16 +681,16 @@ switch($a_switch) {
 		
 		if(isset($_REQUEST['hiddenSubmit']) && $_REQUEST['hiddenSubmit']=='1') {
 
-			updateConfig($link, $_REQUEST['configName'],$_REQUEST['thisValue']);
+			updateConfig($_REQUEST['configName'],$_REQUEST['thisValue']);
 
 		} elseif(isset($_REQUEST['action']) && $_REQUEST['action']=='eraseAllStats') {
 			$tables=array('hostnames','sites','traffic','trafficSummaries','users');
 			reset($tables);
 			while(list($key,$value)=each($tables)) {
 				$query='TRUNCATE TABLE '.$value;
-				db_query($link, $query);
+				db_query($query);
 			}
-			updateConfig($link, 'lastTimestamp','0');
+			updateConfig('lastTimestamp','0');
 		}
 
 		$configVariables[]='keepHistoryDays';
@@ -701,7 +701,7 @@ switch($a_switch) {
 		
 		reset($configVariables);
 		while(list($key,$value)=each($configVariables)) {
-			$pageVars[$value]=getConfigValue($link, $value);
+			$pageVars[$value]=getConfigValue($value);
 		}
 
 		break;
@@ -725,19 +725,19 @@ switch($a_switch) {
 
 		// determing the sort method, or get the defaults
 			if(empty($_REQUEST['OrderBy'])) {
-			$pageVars['OrderBy']=getConfigValue($link, 'defaultIndexOrderBy');
+			$pageVars['OrderBy']=getConfigValue('defaultIndexOrderBy');
 		} else {
 			$pageVars['OrderBy']=$_REQUEST['OrderBy'];
 		}
 		if(empty($_REQUEST['OrderMethod'])) {
-			$pageVars['OrderMethod']=getConfigValue($link, 'defaultIndexOrderMethod');
+			$pageVars['OrderMethod']=getConfigValue('defaultIndexOrderMethod');
 		} else {
 			$pageVars['OrderMethod']=$_REQUEST['OrderMethod'];
 		}
 		
 		// get byte unit used
 		if(empty($_REQUEST['ByteUnit'])) {
-			$pageVars['ByteUnit']=getConfigValue($link, 'defaultIndexByteUnit');
+			$pageVars['ByteUnit']=getConfigValue('defaultIndexByteUnit');
 		} else {
 			$pageVars['ByteUnit']=$_REQUEST['ByteUnit'];
 		}
@@ -760,7 +760,7 @@ switch($a_switch) {
 		$dateGroupings['Monthly']='2';
 		$dateGroupings['Yearly']='3';
 		////get user-selected grouping
-		$topGrouping=getConfigValue($link, 'topGrouping');
+		$topGrouping=getConfigValue('topGrouping');
 		////get valid groupings that can be generated from the available data
 		$query='SELECT ';
 		$query.='DATEDIFF(MAX(date),MIN(date))';
@@ -774,7 +774,7 @@ switch($a_switch) {
 		}
 		if (isset($whereQuery))
 			$query.=$whereQuery;
-		$dbDays=db_select_one_row($link, $query);
+		$dbDays=db_select_one_row($query);
 		$dbDays=$dbDays['0'];
 		if($dbDays>365) {
 			$validGrouping='Yearly';
@@ -851,7 +851,7 @@ switch($a_switch) {
 			$query.=$whereQuery;
 		$query.=$groupingQuery2;
 		$query.=' ORDER BY '.$pageVars['OrderBy'].' '.$pageVars['OrderMethod'];
-		$pageVars['availableDates']=db_select_all($link, $query);
+		$pageVars['availableDates']=db_select_all($query);
 
 		$template='index';
 }

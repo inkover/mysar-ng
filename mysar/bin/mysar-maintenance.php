@@ -20,7 +20,7 @@
 
 
 # record start time, to stop execution if time is exceeded...
-$startTime=mktime();
+$startTime=time();
 $yesterdayTimestamp=$startTime-86400;
 
 // calculate the base path of the program
@@ -32,16 +32,16 @@ $DEBUG_LEVEL='30';
 // Common tasks for both web and cmd
 require($basePath.'/inc/common.inc.php');
 
-$tmpPath=getConfigValue($link, 'tmpPath');
+$tmpPath=getConfigValue('tmpPath');
 
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 
 debug('Start timestamp is '.$startTime,40,__FILE__,__LINE__);
 debug('Configuration:'.print_r($iniConfig,TRUE),40,__FILE__,__LINE__);
 
 $maxRunTime=55;
 
-$cleanUntil=date('Y-m-d',mktime(0,0,0,substr($today,5,2),substr($today,8,2)-getConfigValue($link, 'keepHistoryDays'),substr($today,0,4)));
+$cleanUntil=date('Y-m-d',mktime(0,0,0,substr($today,5,2),substr($today,8,2)-getConfigValue('keepHistoryDays'),substr($today,0,4)));
 debug('Cleaning up until '.$cleanUntil,40,__FILE__,__LINE__);
 	
 // array containing tables to be cleaned
@@ -51,11 +51,11 @@ reset($cleanTable);
 while(list($key,$tableName)=each($cleanTable)) {
 	debug('Cleaning-up '.$tableName.'...',40,__FILE__,__LINE__);
 	$query='DELETE FROM '.$tableName." WHERE date<'".$cleanUntil."'";
-	db_delete($link, $query);
+	db_delete($query);
 }
 
 $query='SHOW TABLES';
-$tables=db_select_all($link, $query);
+$tables=db_select_all($query);
 reset($tables);
 while(list($key,$tableName)=each($tables)) {
 	$timestampNow=time();
@@ -64,19 +64,19 @@ while(list($key,$tableName)=each($tables)) {
 	if(($timestampNow-$startTime ) > $maxRunTime) {
 		debug('YES',40);
 		debug('Exceeded run time',30,__FILE__,__LINE__);
-		my_exit($link, 0);
+		my_exit(0);
 	}
 	debug('NO',40);
 
 	$query="OPTIMIZE TABLE $tableName[0]";
 	debug('Optimizing '.$tableName[0].'...',30,__FILE__,__LINE__);
-	db_query($link, $query);
+	db_query($query);
 	debug('Optimization finished.',30,__FILE__,__LINE__);
 }
 
 	
 debug('Updating last clean-up date to today date...',40,__FILE__,__LINE__);
 $query="UPDATE config SET value='".date('Y-m-d')."' WHERE name='lastCleanUp'";
-db_update($link, $query);
+db_update($query);
 echo "\n";
 ?>

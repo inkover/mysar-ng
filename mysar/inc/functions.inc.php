@@ -55,12 +55,13 @@ function date_timestampFromDbDate($date,$seperator) {
 }
 
 
-function db_delete($link, $query) {
+function db_delete($query) {
 
 	debug('('.$query.') ',50);
+	global $link;
 	$recordSet=mysqli_query($link, $query);
 	if(!$recordSet) {
-		db_error($link, $query);
+		db_error($query);
 	}
 		
 	$affectedRows=mysqli_affected_rows($link);	
@@ -70,15 +71,16 @@ function db_delete($link, $query) {
 	}
 
 
-function db_select_all($link, $query) {
+function db_select_all($query) {
 // select all rows
 	debug('('.$query.') ',40);
 
+	global $link;
 	$result=mysqli_query($link, $query);
 
 	if(!$result) {
 		debug('SQL Error',20,__FILE__,__LINE__);
-		db_error($link, $query);
+		db_error($query);
 		debug('Exiting...',20,__FILE__,__LINE__);
 		die(1);
 	}
@@ -92,25 +94,27 @@ function db_select_all($link, $query) {
 }
 
 
-function db_error($link, $query='') {
+function db_error($query='') {
 	// handles the database errors
 
 	debug('ERROR on SQL query',20,__FILE__,__LINE__);
 	if($query!='') {
 		debug('SQL query: '.$query,20,__FILE__,__LINE__);
 	}
+	global $link;
 	debug('Database error number: '.mysqli_errno($link),20,__FILE__,__LINE__);
 	debug('Database error message: '.mysqli_error($link),20,__FILE__,__LINE__);
 }
 
 
-function db_update($link, $query,$minimumAffectedRows=0) {
+function db_update($query,$minimumAffectedRows=0) {
 
 	debug('('.$query.')',40,__FILE__,__LINE__);
+	global $link;
 	$result=mysqli_query($link, $query);
 	if(!$result) {
 		debug('SQL Update Error',20,__FILE__,__LINE__);
-		db_error($link, $query);
+		db_error($query);
 		debug('Exiting...',20,__FILE__,__LINE__);
 		die(1);
 	}
@@ -118,7 +122,7 @@ function db_update($link, $query,$minimumAffectedRows=0) {
 	$affectedRows=mysqli_affected_rows($link);
 	if($affectedRows<$minimumAffectedRows) {
 		debug('SQL Update Error: Less affected rows than expected',20,__FILE__,__LINE__);
-		db_error($link, $query);
+		db_error($query);
 	}
 	
 	debug('Affected rows: '.$affectedRows,40,__FILE__,__LINE__);
@@ -127,8 +131,9 @@ function db_update($link, $query,$minimumAffectedRows=0) {
 }
 
 
-function db_query($link, $query) {
+function db_query($query) {
 	debug('('.$query.')',40,__FILE__,__LINE__);
+	global $link;
 	return mysqli_query($link, $query);
 }
 
@@ -155,17 +160,18 @@ function debug($message,$debugLevel='',$file='',$line='') {
 	}
 }
 
-function getConfigValue($link, $name) {
+function getConfigValue($name) {
 	
 	$query="SELECT value FROM config WHERE name='$name'";
-	$result=db_select_one_row($link, $query);
+	$result=db_select_one_row($query);
 
 	return $result['value'];
 }
 
-function db_select_one_row($link, $query) {
+function db_select_one_row($query) {
 
 	debug('('.$query.')',40,__FILE__,__LINE__);
+	global $link;
 	$result=mysqli_query($link, $query);
 	$row=@mysqli_fetch_array($result);
 
@@ -173,11 +179,12 @@ function db_select_one_row($link, $query) {
 }
 
 
-function db_select($link, $query) {
+function db_select($query) {
+	global $link;
 	$result=mysqli_query($link, $query);
 
 	if(!$result) {
-		db_error($link, $query);
+		db_error($query);
 		debug('Exiting...',20,__FILE__,__LINE__);
 		die(1);
 	}
@@ -185,7 +192,8 @@ function db_select($link, $query) {
 	return $result;
 }
 
-function db_fetch_array($link, $result) {
+function db_fetch_array($result) {
+	global $link;
 	if($row=mysqli_fetch_array($result)) {
 		return $row;
 	} else {
@@ -207,7 +215,7 @@ function setDefaultView() {
 		$dbValue=$_REQUEST["$value"];
 
 		if($dbValue!='') {
-			updateConfig($link, $dbName,$dbValue);
+			updateConfig($dbName,$dbValue);
 		}
 
 	}
@@ -220,48 +228,48 @@ function errorHandler($line,$error) {
 	exit(1);
 }
 
-function getIpFromIpID($link, $ipID,$date) {
+function getIpFromIpID($ipID,$date) {
 	global $s;
 	
 	$query="SELECT INET6_NTOA(UNHEX(ip)) AS ip FROM resolvedIPs WHERE id='$ipID' AND date='$date'";
-	$recordSet=db_select_one_row($link, $query);
+	$recordSet=db_select_one_row($query);
 	
 	return $recordSet['ip'];
 }
 
-function getHostnameFromIp($link, $ip) {
+function getHostnameFromIp($ip) {
 	
 	$query="SELECT hostname FROM hostnames WHERE ip='$ip'";
-	$recordSet=db_select_one_row($link, $query);
+	$recordSet=db_select_one_row($query);
 	
 	return $recordSet['hostname'];
 }
 
-function getSiteFromSiteID($link, $sitesID,$date) {
+function getSiteFromSiteID($sitesID,$date) {
 	
 	$query="SELECT id,site FROM sites WHERE id='$sitesID' AND date='$date'";
-	$recordSet=db_select_one_row($link, $query);
+	$recordSet=db_select_one_row($query);
 	return $recordSet['site'];
 }
 
 
-function getHostFromIP($link, $ip,$date) {
+function getHostFromIP($ip,$date) {
 	
-	$query="SELECT id,ip as hostiplong,hostname,description,INET6_NTOA(UNHEX(ip)) AS ip FROM hostnames WHERE ip='$ip'";
-	$recordSet=db_select_one_row($link, $query);
+	$query="SELECT id,ip as hostiplong,hostname,description,INET_NTOA(ip) AS ip FROM hostnames WHERE ip='$ip'";
+	$recordSet=db_select_one_row($query);
 	
 	return $recordSet;
 }
 
 
-function getUserFromUsersID($link, $usersID,$date) {
+function getUserFromUsersID($usersID,$date) {
 	$query="SELECT id,authuser FROM users WHERE id='$usersID' AND date='$date'";
-	$recordSet=db_select_one_row($link, $query);
+	$recordSet=db_select_one_row($query);
 	
 	return $recordSet;
 }
 	
-function getActiveUsers($link) {
+function getActiveUsers() {
 	global $pageVars,$s;
 	
 	$time=date('H:i:s',$pageVars['lastTimestamp']-600);
@@ -273,7 +281,7 @@ function getActiveUsers($link) {
 		$query.=" AND ";
 		$query.="time>'$time'";
 	
-	$recordSet=db_select_one_row($link, $query);
+	$recordSet=db_select_one_row($query);
 	
 	return $recordSet['users'];
 }
@@ -307,12 +315,13 @@ function addParameter($url,$newParameter,$newValue) {
 }
 	
 
-function db_insert($link, $query) {
+function db_insert($query) {
 
 	debug('('.$query.') ',50);
+	global $link;
 	$result=mysqli_query($link, $query);
 	if(!$result) {
-		db_error($link, $query);
+		db_error($query);
 		debug('Exiting...',20,__FILE__,__LINE__);
 		die(1);
 	}
@@ -327,10 +336,10 @@ function updateLastTimestamp($timestamp) {
 	
 	$query="UPDATE config SET value='$timestamp' WHERE name='lastTimestamp'";
 	debug('Updating lastTimestamp...',40,__FILE__,__LINE__);
-	db_update($link, $query);
+	db_update($query);
 }
 
-function updateConfig($link, $name,$value) {
+function updateConfig($name,$value) {
 	
 	debug("Updating config value $name to $value...",40,__FILE__,__LINE__);
 
@@ -340,13 +349,14 @@ function updateConfig($link, $name,$value) {
 	$query.='config';
 	$query.=' WHERE ';
 	$query.="name='".$name."'";
+	global $link;
 	$result=mysqli_query($link, $query);
 	if($result) {
 		$numrows=mysqli_num_rows($result);
 	}
 	if($numrows>0) {
 		$query="UPDATE config SET value='".$value."' WHERE name='".$name."'";
-		db_update($link, $query);
+		db_update($query);
 	} else {
 		$query='INSERT INTO ';
 		$query.='config';
@@ -359,7 +369,7 @@ function updateConfig($link, $name,$value) {
 		$query.=',';
 		$query.="'".$value."'";
 		$query.=')';
-		db_insert($link, $query);
+		db_insert($query);
 	}
 }
 
@@ -408,12 +418,12 @@ function url_createSortParameters($url,$validParameters) {
 
 
 
-function my_exit($link, $errorCode) {
+function my_exit($errorCode) {
 	global $lastImportedRecordsNumber,$record,$s;
 	
 	debug($lastImportedRecordsNumber.' records processed',30,__FILE__,__LINE__);
-	updateConfig($link, 'lastTimeStamp',$record[0]);
-	updateConfig($link, 'lastImportedRecordsNumber',$lastImportedRecordsNumber);
+	updateConfig('lastTimeStamp',$record[0]);
+	updateConfig('lastImportedRecordsNumber',$lastImportedRecordsNumber);
 	debug("\n",30,__FILE__,__LINE__);
 
 	exit($errorCode);

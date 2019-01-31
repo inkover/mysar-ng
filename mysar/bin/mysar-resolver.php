@@ -33,14 +33,14 @@ $DEBUG_LEVEL='30';
 require($basePath.'/inc/common.inc.php');
 
 debug('Checking whether resolving is enabled...',40,__FILE__,__LINE__);
-$resolveClients=getConfigValue($link, 'resolveClients');
+$resolveClients=getConfigValue('resolveClients');
 if($resolveClients!='enabled') {
 	debug('Resolving is NOT enabled. Exiting...',30,__FILE__,__LINE__);
 	exit(0);
 }
 debug('Resolving is enabled.',40,__FILE__,__LINE__);
 
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 
 debug('Start timestamp is '.$startTime,40,__FILE__,__LINE__);
 debug('Configuration:'.print_r($iniConfig,TRUE),40,__FILE__,__LINE__);
@@ -57,15 +57,15 @@ $query.=' WHERE ';
 $query.="isResolved='0'";
 $query.=' ORDER BY id ASC';
 
-$result=db_select($link, $query);
-while($row=db_fetch_array($link, $result)) {
+$result=db_select($query);
+while($row=db_fetch_array($result)) {
 	$timestampNow=time();
 	debug('Now timestamp is: '.$timestampNow.'. Script start was at: '.$startTime,40,__FILE__,__LINE__);
 	debug('Checking if run time exceeded '.$maxRunTime.' seconds...',40,__FILE__,__LINE__);
 	if(($timestampNow-$startTime ) > $maxRunTime) {
 		debug('YES',40);
 		debug('Exceeded run time',30,__FILE__,__LINE__);
-		my_exit($link, 0);
+		my_exit(0);
 	}
 	debug('NO',40);
 
@@ -78,12 +78,12 @@ while($row=db_fetch_array($link, $result)) {
 	$query.="isResolved='1'";
 	$query.=' WHERE ';
 	$query.="id='".$row['id']."'";
-	db_update($link, $query,1);
+	db_update($query,1);
 	debug('.',30);
 }
 	
 debug('Updating last resolver timestamp...',40,__FILE__,__LINE__);
 $query="UPDATE config SET value='".time()."' WHERE name='lastResolve'";
-db_update($link, $query);
+db_update($query);
 echo "\n";
 ?>
